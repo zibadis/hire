@@ -6,6 +6,24 @@
 <title>Hire Masoud Moghaddam | ZIBADIS</title>
 <meta name="description" content="Full-time and onsite hiring page for Masoud Moghaddam: art direction, branding, motion, 3D, web and AI development.">
 <meta name="robots" content="noindex">
+<script>
+  // ===== Google Analytics 4 =====
+  // Replace with your own Measurement ID from analytics.google.com (Admin → Data streams).
+  window.GA_ID = "G-Q1WK5DS9N9";
+  // Personal links: add ?ref=company to the URL you send, e.g. zibadis.com/hire/?ref=tapsell&lang=fa
+  window.REF = (new URLSearchParams(location.search).get("ref") || "direct").toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40) || "direct";
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  window.track = function (name, params) { if (/^G-[A-Z0-9]{6,}$/.test(GA_ID) && GA_ID !== "G-XXXXXXXXXX") gtag("event", name, Object.assign({ ref: REF }, params || {})); };
+  if (/^G-[A-Z0-9]{6,}$/.test(GA_ID) && GA_ID !== "G-XXXXXXXXXX") {
+    const s = document.createElement("script");
+    s.async = true; s.src = "https://www.googletagmanager.com/gtag/js?id=" + GA_ID;
+    document.head.appendChild(s);
+    gtag("js", new Date());
+    gtag("set", "user_properties", { ref: REF });
+    gtag("config", GA_ID, { ref: REF });
+  }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -587,9 +605,11 @@ function render(animate) {
   core.classList.add("fade");
   setTimeout(() => { core.innerHTML = h; core.classList.remove("fade"); }, 140);
 }
+const viewed = new Set();
 function select(i) {
   if (i === current) return;
   current = i;
+  if (!viewed.has(i)) { viewed.add(i); track("skill_view", { skill: ITEMS[i].en.label }); }
   segs.forEach((s, k) => s.classList.toggle("active", k === i));
   chipEls.forEach((c, k) => c.classList.toggle("active", k === i));
   render(true);
@@ -609,7 +629,23 @@ function setLang(l) {
   try { localStorage.setItem("hire-lang", lang); } catch (e) {}
   try { const u = new URL(location.href); u.searchParams.set("lang", lang); history.replaceState(null, "", u); } catch (e) {}
 }
-document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => setLang(b.dataset.lang)));
+document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => {
+  if (b.dataset.lang !== lang) track("language_change", { language: b.dataset.lang });
+  setLang(b.dataset.lang);
+}));
+
+// analytics: CV downloads, contact clicks and outbound links
+document.addEventListener("click", e => {
+  const a = e.target.closest("a[href]");
+  if (!a) return;
+  const href = a.getAttribute("href");
+  if (/cv\.pdf$/i.test(href)) track("cv_download", { language: lang });
+  else if (href.startsWith("mailto:")) track("contact_click", { method: "email" });
+  else if (href.startsWith("tel:")) track("contact_click", { method: "phone" });
+  else if (/linkedin\.com/.test(href)) track("contact_click", { method: "linkedin" });
+  else if (/github\.com/.test(href)) track("contact_click", { method: "github" });
+  else if (/^https?:/.test(href)) track("portfolio_click", { url: href });
+});
 
 // initial language: ?lang=fa / ?lang=en, then saved choice, then browser language
 let start = new URLSearchParams(location.search).get("lang");
